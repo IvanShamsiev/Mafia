@@ -1,5 +1,6 @@
 package com.example.ivan.mafia;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -16,11 +17,13 @@ public class LoginActivity extends AppCompatActivity {
 
     EditText editName, editPassword;
     Button btnSignIn;
-    TextView textViewRegister;
+    TextView textRegister, textNoAccount;
 
     Handler handler;
 
     SharedPreferences sPref;
+
+    String name, password;
 
     Mafia mafia = Mafia.getInstance();
 
@@ -33,22 +36,28 @@ public class LoginActivity extends AppCompatActivity {
         editName = findViewById(R.id.editName);
         editPassword = findViewById(R.id.editPassword);
         btnSignIn = findViewById(R.id.btnSignIn);
-        textViewRegister = findViewById(R.id.textViewRegister);
+        textRegister = findViewById(R.id.textRegister);
+        textNoAccount = findViewById(R.id.textNoAccount);
 
         sPref = getSharedPreferences("prefs", MODE_PRIVATE);
 
+        signInMode();
+    }
+
+    private void signInMode() {
+        textNoAccount.setText("Нет аккаунта? ");
+        textRegister.setText("Зарегистрироваться");
+        textRegister.setOnClickListener(textReg -> registerMode());
+
+        btnSignIn.setText("Войти");
         btnSignIn.setOnClickListener(view -> {
-            String name = editName.getText().toString();
-            String password = editPassword.getText().toString();
+            name = editName.getText().toString();
+            password = editPassword.getText().toString();
             if (name.length() < minNameChars)
                 Toast.makeText(this, "Имя должно быть больше " + minNameChars + " символов", Toast.LENGTH_SHORT).show();
             else if (password.length() < minPasswordChars)
                 Toast.makeText(this, "Пароль должен быть больше " + minPasswordChars + " символов", Toast.LENGTH_SHORT).show();
             else mafia.signIn(handler, name, password);
-        });
-
-        textViewRegister.setOnClickListener(view -> {
-
         });
 
         handler = new Handler(msg -> {
@@ -59,17 +68,50 @@ public class LoginActivity extends AppCompatActivity {
             }
             if (msg.what == 11) {
                 if (message.equals("OK")) {
-                    setResult(1);
+                    saveNameAndPassword(getSharedPreferences("prefs", MODE_PRIVATE), name, password);
+                    Toast.makeText(this, "Вы успешно вошли в аккаунт!", Toast.LENGTH_SHORT).show();
+                    setResult(1, new Intent().putExtra("name", name));
                     finish();
                 }
                 else Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
             }
             return true;
         });
+    }
 
+    private void registerMode() {
+        textNoAccount.setText("Уже зарегистрированы? ");
+        textRegister.setText("Войти");
+        textRegister.setOnClickListener(textRegister2 -> signInMode());
 
-        // setPass(getSharedPreferences("prefs", MODE_PRIVATE), "12345");
+        btnSignIn.setText("Зарегистрироваться");
+        btnSignIn.setOnClickListener(btnSignIn -> {
+            name = editName.getText().toString();
+            password = editPassword.getText().toString();
+            if (name.length() < minNameChars)
+                Toast.makeText(this, "Имя должно быть больше " + minNameChars + " символов", Toast.LENGTH_SHORT).show();
+            else if (password.length() < minPasswordChars)
+                Toast.makeText(this, "Пароль должен быть больше " + minPasswordChars + " символов", Toast.LENGTH_SHORT).show();
+            else mafia.register(handler, name, password);
+        });
 
+        handler = new Handler(msg -> {
+            String message = (String) msg.obj;
+            if (msg.arg1 == -1) {
+                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            if (msg.what == 10) {
+                if (message.equals("Аккаунт успешно создан!")) {
+                    saveNameAndPassword(getSharedPreferences("prefs", MODE_PRIVATE), name, password);
+                    Toast.makeText(this, "Вы успешно зарегистрировались!", Toast.LENGTH_SHORT).show();
+                    setResult(1, new Intent().putExtra("name", name));
+                    finish();
+                }
+                else Toast.makeText(this, "Ошибка регистрации: " + message, Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        });
     }
 
     public static void saveNameAndPassword(SharedPreferences sPrefs, String name, String password) {
