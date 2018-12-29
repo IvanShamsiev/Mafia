@@ -24,8 +24,6 @@ public class Mafia {
         return mafia;
     }
 
-    private Handler handler = MainActivity.handler;
-
     /*private Retrofit retrofitJSON = new Retrofit.Builder()
             .baseUrl("https://themafia2281488.000webhostapp.com/") // Базовый адрес
             .addConverterFactory(GsonConverterFactory.create()) // Для преобразования JSON в List
@@ -88,88 +86,88 @@ public class Mafia {
 
     private MafiaAPI mafiaAPI;
 
-    void checkAccount(String name, String password) {
+    void checkAccount(Handler handler, String name, String password) {
         mafiaAPI.checkAccount(name, password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(1));
+                .subscribe(new MyObserver(1, handler));
     }
 
-    void checkRooms() {
+    void checkRooms(Handler handler) {
         mafiaAPI.checkRooms()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(2));
+                .subscribe(new MyObserver(2, handler));
     }
 
-    void createRoom(String playerName, String roomName, String roomPassword) {
+    void createRoom(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.createRoom(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(3));
+                .subscribe(new MyObserver(3, handler));
     }
 
-    void deleteRoom(String playerName, String roomName, String roomPassword) {
+    void deleteRoom(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.deleteRoom(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(4));
+                .subscribe(new MyObserver(4, handler));
     }
 
-    void gameOver(String playerName, String roomName, String roomPassword) {
+    void gameOver(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.gameOver(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(5));
+                .subscribe(new MyObserver(5, handler));
     }
 
-    void gameStart(String playerName, String roomName, String roomPassword, Integer playersCount, Integer mafiaCount, Integer doctorCount, Integer sheriffCount, Integer civilianCount) {
+    void gameStart(Handler handler, String playerName, String roomName, String roomPassword, Integer playersCount, Integer mafiaCount, Integer doctorCount, Integer sheriffCount, Integer civilianCount) {
         mafiaAPI.gameStart(playerName, roomName, roomPassword, playersCount, mafiaCount, doctorCount, sheriffCount, civilianCount)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(6));
+                .subscribe(new MyObserver(6, handler));
     }
 
-    void joinRoom(String playerName, String roomName, String roomPassword) {
+    void joinRoom(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.joinRoom(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(7));
+                .subscribe(new MyObserver(7, handler));
     }
 
-    void nextPhase(String playerName, String roomName, String roomPassword) {
+    void nextPhase(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.nextPhase(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(8));
+                .subscribe(new MyObserver(8, handler));
     }
 
-    void playCheck(String playerName, String roomName, String roomPassword) {
+    void playCheck(Handler handler, String playerName, String roomName, String roomPassword) {
         mafiaAPI.playCheck(playerName, roomName, roomPassword)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(9));
+                .subscribe(new MyObserver(9, handler));
     }
 
-    void register(String name, String password) {
+    void register(Handler handler, String name, String password) {
         mafiaAPI.register(name, password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(10));
+                .subscribe(new MyObserver(10, handler));
     }
 
-    void signIn(String name, String password) {
+    void signIn(Handler handler, String name, String password) {
         mafiaAPI.signIn(name, password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(11));
+                .subscribe(new MyObserver(11, handler));
     }
 
-    void vote(String playerName, String roomName, String roomPassword, String vote) {
+    void vote(Handler handler, String playerName, String roomName, String roomPassword, String vote) {
         mafiaAPI.vote(playerName, roomName, roomPassword, vote)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new MyObserver(12));
+                .subscribe(new MyObserver(12, handler));
     }
 
 
@@ -178,10 +176,13 @@ public class Mafia {
 
         private int n; // Номер функции
 
+        private Handler handler; // Куда отправлять результат
+
         private String response; // Ответ сервера
 
-        MyObserver(int n) {
+        MyObserver(int n, Handler handler) {
             this.n = n;
+            this.handler = handler;
         }
 
         @Override

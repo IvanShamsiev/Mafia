@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">Mafia</string>
+    <string name="app_name">Мафия</string>
+    <string name="title_pass">Авторизация</string>
+    <string name="account_check">Пожалуйста, подождите. Идёт проверка аккаунта</string>
 </resources>

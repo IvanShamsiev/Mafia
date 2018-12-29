@@ -1,10 +1,18 @@
 package com.example.ivan.mafia;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -19,21 +27,63 @@ public class MainActivity extends AppCompatActivity {
 
     public static Handler handler;
 
+    SharedPreferences sPrefs;
+
     Mafia mafia;
     Button btnCreate, btnConnect, btnSettings, btnAbout;
+
+    String savedName, savedPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        handler = new Handler(msg -> {
+            String message = (String) msg.obj;
+            if (msg.arg1 == -1) {
+                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            if (msg.what == 1) {
+                if (message.equals("OK")) {
+                    Toast.makeText(this, "Проверка аккаунта: Успешно!", Toast.LENGTH_SHORT).show();
+                    start();
+                }
+                else {
+                    Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(this, LoginActivity.class);
+                    startActivityForResult(intent, 0);
+                }
+            }
+            return true;
+        });
+
+        sPrefs = getSharedPreferences("prefs", MODE_PRIVATE);
+
+        mafia = Mafia.getInstance();
+
+        savedName = sPrefs.getString("name", null);
+        savedPassword = sPrefs.getString("password", null);
+        if (savedName == null || savedPassword == null) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivityForResult(intent, 0);
+        } else mafia.checkAccount(handler, savedName, savedPassword);
+
+    }
+
+
+    private void start() {
         btnCreate = findViewById(R.id.btnCreate);
         btnConnect = findViewById(R.id.btnConnect);
         btnSettings = findViewById(R.id.btnSettings);
         btnAbout = findViewById(R.id.btnAbout);
 
-        btnCreate.setOnClickListener(view -> mafia.checkRooms());
-        btnConnect.setOnClickListener(view -> mafia.checkAccount("Иван", "123"));
+        btnCreate.setOnClickListener(view -> mafia.checkRooms(handler));
+        btnConnect.setOnClickListener(view -> mafia.checkAccount(handler, "Иван", "123"));
+
+        ((TextView) findViewById(R.id.textView)).setText(savedName);
+        findViewById(R.id.progressBar).setVisibility(View.GONE);
 
         handler = new Handler(msg -> {
             String message = (String) msg.obj;
@@ -53,93 +103,15 @@ public class MainActivity extends AppCompatActivity {
             }
             return true;
         });
-
-        mafia = Mafia.getInstance();
-
-//        handler = new Handler(msg -> {
-//            String message = (String) msg.obj;
-//            if (message.equals("Игра ещё не запущена"))
-//                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-//            else mafia.connect(myToken);
-//            return true;
-//        });
-
-
-        // Настраиваем слежение за запросами
-//        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-//        interceptor.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
-//        OkHttpClient client = new OkHttpClient.Builder()
-//                .addInterceptor(interceptor)
-//                .build();
-//
-//        Retrofit retrofitString = new Retrofit.Builder()
-//                .baseUrl("https://themafia2281488.000webhostapp.com/") // Базовый адрес
-//                .addConverterFactory(ScalarsConverterFactory.create()) // Для преобразования в строку
-//                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-//                .client(client)
-//                .build();
-//        MafiaAPI mafiaStringAPI = retrofitString.create(MafiaAPI.class);
-//
-//        Observer<String> checkObserver = new Observer<String>() {
-//            @Override
-//            public void onSubscribe(Disposable d) {
-//                log("onSubscribe");
-//            }
-//
-//            @Override
-//            public void onNext(String s) {
-//                log("onNext: " + s);
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//                log("onError: " + e.getMessage());
-//            }
-//
-//            @Override
-//            public void onComplete() {
-//                log("onComplete");
-//            }
-//        };
-//
-//            String response;
-//            Observable<String> listOfMessages = mafiaStringAPI.checkGame(421928);
-//            listOfMessages
-//                    .subscribeOn(Schedulers.io())
-//                    .observeOn(AndroidSchedulers.mainThread())
-//                    .subscribe(checkObserver);
-
-
-
-
-
-
-
-
-
-//        new Thread(() -> {
-//            try {
-//                TimeUnit.SECONDS.sleep(3);
-//                Observable<List<RoomList>> listOfMessages2 = mafiaAPI.getPlayMessage(22222);
-//                listOfMessages
-//                        .observeOn(AndroidSchedulers.mainThread())
-//                        .subscribe(messageList -> log("Ку!"));
-//            } catch (InterruptedException e) {e.printStackTrace();}
-//        }).start();
-
     }
 
-
-    class myClass {
-        public List<RoomList> getList() {
-            return list;
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == 0) {
+            if (resultCode == 1) start();
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) finishAffinity();
+            else ActivityCompat.finishAffinity(this);
         }
-
-        public void setList(List<RoomList> list) {
-            this.list = list;
-        }
-
-        List<RoomList> list;
     }
 
     void log(String txt) {
