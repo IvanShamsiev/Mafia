@@ -5,9 +5,14 @@ import android.os.Handler;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
 
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -67,6 +72,8 @@ public class Mafia {
         }
     };*/
 
+    
+    
     private void configInterceptor() {
         // Настраиваем слежение за запросами
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
@@ -147,6 +154,13 @@ public class Mafia {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new MyObserver(9, handler));
+        /*Observable
+                .interval(0, 1000, TimeUnit.MILLISECONDS)
+                .flatMap((Function<Long, ObservableSource<?>>) aLong -> mafiaAPI.playCheck(playerName, roomName, roomPassword))
+                .map(o -> (PlayCheck) o)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new MyObserverForJSON(9, playCheckHandler));*/
     }
 
     void register(Handler handler, String name, String password) {
@@ -171,14 +185,13 @@ public class Mafia {
     }
 
 
-
-    private class MyObserver implements Observer<String> {
+    private class MyObserver implements Observer<Object> {
 
         private int n; // Номер функции
 
         private Handler handler; // Куда отправлять результат
 
-        private String response; // Ответ сервера
+        private Object response; // Ответ сервера
 
         MyObserver(int n, Handler handler) {
             this.n = n;
@@ -191,8 +204,8 @@ public class Mafia {
         }
 
         @Override
-        public void onNext(String s) {
-            response = s;
+        public void onNext(Object o) {
+            response = o;
         }
 
         @Override

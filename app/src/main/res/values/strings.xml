@@ -3,4 +3,5 @@
     <string name="title_pass">Авторизация</string>
     <string name="account_check">Идёт проверка аккаунта…</string>
     <string name="sign_out"><u>Выйти</u></string>
+    <string name="try_again"><u>Нажмите, чтобы попробовать ещё раз</u></string>
 </resources>

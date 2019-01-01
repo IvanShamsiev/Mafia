@@ -11,27 +11,23 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
 
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "myTag";
-
     public static final int myToken = 421928;
 
     public static Handler handler;
-
     SharedPreferences sPrefs;
-
     Mafia mafia;
+
     Button btnCreate, btnConnect, btnSettings, btnAbout;
     TextView textAccount, textSignOut;
+    Intent intentLogin, intentPlay;
 
     String savedName, savedPassword;
 
@@ -46,10 +42,21 @@ public class MainActivity extends AppCompatActivity {
         textAccount.setText(R.string.account_check);
         textSignOut.setVisibility(View.GONE);
 
+        intentLogin = new Intent(this, LoginActivity.class);
+        intentPlay = new Intent(this, PlayActivity.class);
+
 
         handler = new Handler(msg -> {
             String message = (String) msg.obj;
             if (msg.arg1 == -1) {
+                findViewById(R.id.progressBar).setVisibility(View.GONE);
+                textAccount.setText(R.string.try_again);
+                textAccount.setOnClickListener(view -> {
+                    findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+                    mafia.checkAccount(handler, savedName, savedPassword);
+                    textAccount.setText(R.string.account_check);
+                    textAccount.setOnClickListener(null);
+                });
                 Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
                 return true;
             }
@@ -62,8 +69,7 @@ public class MainActivity extends AppCompatActivity {
                     else {
                         Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
                         LoginActivity.saveNameAndPassword(sPrefs, null, null);
-                        Intent intent = new Intent(this, LoginActivity.class);
-                        startActivityForResult(intent, 0);
+                        startActivityForResult(intentLogin, 0);
                     }
                     break;
             }
@@ -76,10 +82,8 @@ public class MainActivity extends AppCompatActivity {
 
         savedName = sPrefs.getString("name", null);
         savedPassword = sPrefs.getString("password", null);
-        if (savedName == null || savedPassword == null) {
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivityForResult(intent, 0);
-        } else mafia.checkAccount(handler, savedName, savedPassword);
+        if (savedName == null || savedPassword == null) startActivityForResult(intentLogin, 0);
+        else mafia.checkAccount(handler, savedName, savedPassword);
 
     }
 
@@ -90,12 +94,20 @@ public class MainActivity extends AppCompatActivity {
         btnSettings = findViewById(R.id.btnSettings);
         btnAbout = findViewById(R.id.btnAbout);
 
+
+        btnSettings.setOnClickListener(view -> {
+            Intent intent = new Intent(this, PlayActivity.class);
+            intent.putExtra("playerName", savedName);
+            intent.putExtra("roomName", "Комната1");
+            intent.putExtra("roomPassword", "123");
+            startActivity(intent);
+        });
+
         textAccount.setText(savedName);
         textSignOut.setVisibility(View.VISIBLE);
         textSignOut.setOnClickListener(view -> {
             LoginActivity.saveNameAndPassword(sPrefs, null, null);
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivityForResult(intent, 0);
+            startActivityForResult(intentLogin, 0);
         });
         findViewById(R.id.progressBar).setVisibility(View.GONE);
 
