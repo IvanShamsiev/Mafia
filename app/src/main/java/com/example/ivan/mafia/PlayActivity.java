@@ -140,32 +140,6 @@ public class PlayActivity extends AppCompatActivity {
     }
 
     void playCycle(PlayCheck playCheck) {
-//        if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
-//        if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
-//
-//        Handler handler = new Handler(msg -> {
-//            if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
-//            if (!playCheck.playersWithMyRole.equals(gameInfo.playersWithMyRole))
-//                gameInfo.playersWithMyRoleUpdate(playCheck.playersWithMyRole);
-//            if (!playCheck.voted.equals(gameInfo.voted)) gameInfo.votedUpdate(playCheck.voted);
-//            if (!playCheck.phaseNumber.equals(gameInfo.phaseNumber))
-//                gameInfo.phaseNumberUpdate(playCheck.phaseNumber);
-//            if (!playCheck.sheriffIsRight.equals(gameInfo.sheriffIsRight))
-//                gameInfo.sheriffIsRightUpdate(playCheck.sheriffIsRight);
-//            if (!playCheck.winners.equals(gameInfo.winners))
-//                gameInfo.winnersUpdate(playCheck.winners, playCheck.players);
-//            return true;
-//        });
-//        new Thread(() -> {
-//            try {
-//                TimeUnit.MILLISECONDS.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            handler.sendEmptyMessage(0);
-//        }).start();
-
-
         if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
         if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
         if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
@@ -177,14 +151,11 @@ public class PlayActivity extends AppCompatActivity {
             gameInfo.sheriffIsRightUpdate(playCheck.sheriffIsRight);
         if (!playCheck.winners.equals(gameInfo.winners)) gameInfo.winnersUpdate(playCheck.winners);
         if (!playCheck.voteCount.equals(gameInfo.voteCount)) gameInfo.voteCountUpdate(playCheck.voteCount);
-
     }
 
     private class MyAdapter extends BaseAdapter {
 
         LayoutInflater inflater = getLayoutInflater();
-
-        int i = 0;
 
         MyAdapter(ArrayList<HashMap<String, Object>> list) {
             playersData = list;
