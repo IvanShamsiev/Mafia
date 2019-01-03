@@ -1,6 +1,5 @@
 package com.example.ivan.mafia;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,9 +9,9 @@ public class PlayCheck {
     String myRole;
     Boolean sheriffIsRight;
     String winners;
+    Integer voteCount;
     HashMap<String, String> players = new HashMap<>();
-    ArrayList<String> playersWithMyRole = new ArrayList<>();
-    Boolean voted;
+    HashMap<String, String> playerRoles = new HashMap<>();
 
     @Override
     public String toString() {
@@ -21,8 +20,8 @@ public class PlayCheck {
         for (Map.Entry<String, String> entry : players.entrySet())
             resp += entry.getKey() + ": " + entry.getValue() + ", ";
         resp += "; Players with my role: ";
-        for (String s : playersWithMyRole)
-            resp += s + ", ";
+        for (Map.Entry<String, String> entry : playerRoles.entrySet())
+            resp += entry.getKey() + ": " + entry.getValue() + ", ";
         return resp;
     }
 }

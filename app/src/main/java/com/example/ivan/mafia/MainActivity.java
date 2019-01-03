@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static Handler handler;
     SharedPreferences sPrefs;
-    Mafia mafia;
+    Mafia mafia = Mafia.getInstance();
 
     Button btnCreate, btnConnect, btnSettings, btnAbout;
     TextView textAccount, textSignOut;
@@ -44,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
         intentLogin = new Intent(this, LoginActivity.class);
         intentPlay = new Intent(this, PlayActivity.class);
+
+
+        mafia.configInterceptor();
 
 
         handler = new Handler(msg -> {
@@ -78,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
         sPrefs = getSharedPreferences("prefs", MODE_PRIVATE);
 
-        mafia.configInterceptor();
-        mafia = Mafia.getInstance();
 
         savedName = sPrefs.getString("name", null);
         savedPassword = sPrefs.getString("password", null);
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("playerName", savedName);
             intent.putExtra("roomName", "Комната1");
             intent.putExtra("roomPassword", "123");
-            intent.putExtra("roomCreator", "Иван");
+            intent.putExtra("roomCreator", "Иван2");
             startActivity(intent);
         });
 

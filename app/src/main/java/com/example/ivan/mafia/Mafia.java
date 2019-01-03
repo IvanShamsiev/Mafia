@@ -22,9 +22,10 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class Mafia {
 
-    private static Mafia mafia = new Mafia();
+    private static Mafia mafia;
 
     static Mafia getInstance() {
+        if (mafia == null) mafia = new Mafia();
         return mafia;
     }
 

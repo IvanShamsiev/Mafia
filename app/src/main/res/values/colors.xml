@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#d81b60</color>
     <color name="playerNameColor">#00cccc</color>
+    <color name="isAliveColor">#00cc00</color>
+    <color name="isNotAliveColor">#cc0000</color>
 </resources>
