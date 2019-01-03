@@ -12,6 +12,7 @@ public class PlayCheck {
     String winners;
     HashMap<String, String> players = new HashMap<>();
     ArrayList<String> playersWithMyRole = new ArrayList<>();
+    Boolean voted;
 
     @Override
     public String toString() {

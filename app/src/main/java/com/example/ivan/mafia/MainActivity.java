@@ -78,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
         sPrefs = getSharedPreferences("prefs", MODE_PRIVATE);
 
+        mafia.configInterceptor();
         mafia = Mafia.getInstance();
 
         savedName = sPrefs.getString("name", null);
@@ -100,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("playerName", savedName);
             intent.putExtra("roomName", "Комната1");
             intent.putExtra("roomPassword", "123");
+            intent.putExtra("roomCreator", "Иван");
             startActivity(intent);
         });
 
@@ -111,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         });
         findViewById(R.id.progressBar).setVisibility(View.GONE);
 
-        btnCreate.setOnClickListener(view -> mafia.checkRooms(handler));
+        btnCreate.setOnClickListener(view -> mafia.createRoom(handler, savedName, "Комната1", "123"));
         btnConnect.setOnClickListener(view -> mafia.checkAccount(handler, "Иван", "123"));
 
         handler = new Handler(msg -> {
@@ -128,6 +130,18 @@ public class MainActivity extends AppCompatActivity {
                 case 2:
                     RoomList[] data = new Gson().fromJson(message, RoomList[].class);
                     for (RoomList pM: data) Log.d(TAG, pM.toString());
+                    break;
+                case 3:
+                    if (message.equals("Комната с таким названием и паролем уже существует!")) {
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                    Intent intent = new Intent(this, PlayActivity.class);
+                    intent.putExtra("playerName", savedName);
+                    intent.putExtra("roomName", "Комната1");
+                    intent.putExtra("roomPassword", "123");
+                    intent.putExtra("roomCreator", "Иван");
+                    startActivity(intent);
                     break;
             }
             return true;

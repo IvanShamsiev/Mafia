@@ -24,10 +24,10 @@ public class Mafia {
 
     private static Mafia mafia = new Mafia();
 
-    public static Mafia getInstance() {
-        mafia.configInterceptor();
+    static Mafia getInstance() {
         return mafia;
     }
+
 
     /*private Retrofit retrofitJSON = new Retrofit.Builder()
             .baseUrl("https://themafia2281488.000webhostapp.com/") // Базовый адрес
@@ -74,7 +74,7 @@ public class Mafia {
 
     
     
-    private void configInterceptor() {
+    void configInterceptor() {
         // Настраиваем слежение за запросами
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);

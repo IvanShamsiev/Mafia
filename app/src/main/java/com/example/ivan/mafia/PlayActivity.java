@@ -1,21 +1,28 @@
 package com.example.ivan.mafia;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,15 +34,27 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.functions.Functions;
+import io.reactivex.schedulers.Schedulers;
 
 public class PlayActivity extends AppCompatActivity {
 
-    String playerName, roomName, roomPassword;
+    String playerName, roomName, roomPassword, roomCreator;
     View playerView;
     Mafia mafia = Mafia.getInstance();
+    Observable observable;
 
-    Button btnVote;
+    Button btnVote, btnNext, btnGameOver;
+    LinearLayout layoutRoomCreator;
     TextView textSheriffIsRight;
     GridView playerList;
     MyAdapter adapter;
@@ -55,40 +74,53 @@ public class PlayActivity extends AppCompatActivity {
         playerName = intent.getStringExtra("playerName");
         roomName = intent.getStringExtra("roomName");
         roomPassword = intent.getStringExtra("roomPassword");
+        roomCreator = intent.getStringExtra("roomCreator");
 
         textSheriffIsRight = findViewById(R.id.textSheriffIsRight);
         playerList = findViewById(R.id.playerList);
         btnVote = findViewById(R.id.btnVote);
-//        btnVote.setEnabled(false);
+        btnNext = findViewById(R.id.btnNext);
+        btnGameOver = findViewById(R.id.btnGameOver);
+        layoutRoomCreator = findViewById(R.id.layoutRoomCreator);
 
         setTitle(roomName + " (Ожидание игроков)");
 
-//        HashMap<String, Object> map;
-//
-//        map = new HashMap<>();
-//        map.put("name", "Иванушка");
-//        map.put("image", R.drawable.ic_civilian);
-//        list.add(map);
-//
-//        for (int i = 0; i < 100; i++) {
-//            map = new HashMap<>();
-//            map.put("name", "Иван" + i);
-//            map.put("image", R.drawable.ic_civilian);
-//            list.add(map);
-//        }
-//        adapter = new MyAdapter(list);
-
-        playerList.setAdapter(adapter);
         playerList.setNumColumns(GridView.AUTO_FIT);
-//        playerList.setColumnWidth(500);
-//        playerList.setStretchMode(GridView.STRETCH_SPACING_UNIFORM);
 
-        btnVote.setOnClickListener(view -> {});
+
+        Handler voteHandler = new Handler(msg -> {
+            if (msg.arg1 == -1) {
+                Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            switch (msg.what) {
+                case 12:
+                    Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    btnVote.setEnabled(false);
+                    break;
+            }
+            return true;
+        });
+        btnVote.setOnClickListener(view -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            String[] players = new String[adapter.data.size()];
+            for (int i = 0; i < adapter.data.size(); i++)
+                players[i] = ((String) adapter.data.get(i).get("name"));
+            builder.setSingleChoiceItems(players, 2, null);
+            builder.setPositiveButton("Проголосовать", (dialog, which) -> mafia.vote(voteHandler, playerName, roomName, roomPassword, players[(((AlertDialog) dialog).getListView()).getCheckedItemPosition()]));
+            builder.setNegativeButton("Отмена", null);
+            builder.show();
+        });
 
         playCheckHandler = new Handler(msg -> {
-            if (msg.arg1 == -1 || msg.obj.equals("Вы не являетесь игроком!") ||
-                    msg.obj.equals("Комната с таким названием и паролем не существует")) {
+            if (msg.arg1 == -1 ) {
                 Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            if (msg.obj.equals("Вы не являетесь игроком!") || msg.obj.equals("Комната с таким названием и паролем не существует")) {
+                Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                roomRun.interrupt();
+                finish();
                 return true;
             }
             PlayCheck playCheck = new Gson().fromJson((String) msg.obj, PlayCheck.class);
@@ -103,6 +135,8 @@ public class PlayActivity extends AppCompatActivity {
         gameInfo = new GameInfo();
         gameInfo.getPlay();
 
+        if (playerName.equals(roomCreator)) notLaunched();
+
         roomRun = new Thread(() -> {
             while (true) {
                 try {
@@ -116,26 +150,112 @@ public class PlayActivity extends AppCompatActivity {
             }
         });
         roomRun.start();
-        Log.d("myLog", "111");
     }
 
     void playCycle(PlayCheck playCheck) {
-        if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
-        if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
+//        if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
+//        if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
+//
+//        Handler handler = new Handler(msg -> {
+//            if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
+//            if (!playCheck.playersWithMyRole.equals(gameInfo.playersWithMyRole))
+//                gameInfo.playersWithMyRoleUpdate(playCheck.playersWithMyRole);
+//            if (!playCheck.voted.equals(gameInfo.voted)) gameInfo.votedUpdate(playCheck.voted);
+//            if (!playCheck.phaseNumber.equals(gameInfo.phaseNumber))
+//                gameInfo.phaseNumberUpdate(playCheck.phaseNumber);
+//            if (!playCheck.sheriffIsRight.equals(gameInfo.sheriffIsRight))
+//                gameInfo.sheriffIsRightUpdate(playCheck.sheriffIsRight);
+//            if (!playCheck.winners.equals(gameInfo.winners))
+//                gameInfo.winnersUpdate(playCheck.winners, playCheck.players);
+//            return true;
+//        });
+//        new Thread(() -> {
+//            try {
+//                TimeUnit.MILLISECONDS.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            handler.sendEmptyMessage(0);
+//        }).start();
 
-        Handler handler = new Handler(msg -> {
-            if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
-            if (!playCheck.playersWithMyRole.equals(gameInfo.playersWithMyRole))
-                gameInfo.playersWithMyRoleUpdate(playCheck.playersWithMyRole);
+        ArrayList<Function<Void, Void>> functions = new ArrayList<>();
+
+        Observer<Object> observer = new Observer<Object>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Object function) {
+                Function<Void, Void> fun = (Function<Void, Void>) function;
+                fun.apply(null);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(PlayActivity.this, "onError: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
+
+        functions.add(v -> {
             if (!playCheck.phaseNumber.equals(gameInfo.phaseNumber))
                 gameInfo.phaseNumberUpdate(playCheck.phaseNumber);
+//            Toast.makeText(this, "phaseNumber", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
+            if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
+//            Toast.makeText(this, "isLaunched", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
+            if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
+//            Toast.makeText(this, "players", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+
+        functions.add(v -> {
+            if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
+//            Toast.makeText(this, "myRole", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
+            if (!playCheck.playersWithMyRole.equals(gameInfo.playersWithMyRole))
+                gameInfo.playersWithMyRoleUpdate(playCheck.playersWithMyRole);
+//            Toast.makeText(this, "playersWithMyRole", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
+            if (!playCheck.voted.equals(gameInfo.voted)) gameInfo.votedUpdate(playCheck.voted);
+//            Toast.makeText(this, "voted", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
             if (!playCheck.sheriffIsRight.equals(gameInfo.sheriffIsRight))
                 gameInfo.sheriffIsRightUpdate(playCheck.sheriffIsRight);
+//            Toast.makeText(this, "sheriffIsRight", Toast.LENGTH_SHORT).show();
+            return null;
+        });
+        functions.add(v -> {
             if (!playCheck.winners.equals(gameInfo.winners))
                 gameInfo.winnersUpdate(playCheck.winners, playCheck.players);
-            return true;
+//            Toast.makeText(this, "winners", Toast.LENGTH_SHORT).show();
+            return null;
         });
-            handler.sendEmptyMessage(0);
+
+        Observable
+                .fromArray(functions.toArray())
+                .zipWith(Observable.interval(0, 10, TimeUnit.MILLISECONDS), (fun, time) -> fun)
+//                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(observer);
+
     }
 
     private class MyAdapter extends BaseAdapter {
@@ -190,9 +310,6 @@ public class PlayActivity extends AppCompatActivity {
             }
 
             views.add(view);
-            Log.d("myLog", "Добавляю view" + (views.size()-1) + ": " + view + ", textName: " + ((TextView) view.findViewById(R.id.textName)).getText());
-            Log.d("myLog", "dataSize: " + data.size() + ", viewsSize: " + views.size());
-
             return view;
         }
     }
@@ -208,10 +325,16 @@ public class PlayActivity extends AppCompatActivity {
             winners = "none";
             players = new HashMap<>();
             playersWithMyRole = new ArrayList<>();
+            voted = true;
         }
 
         void isLaunchedUpdate(Boolean isLaunched) {
             this.isLaunched = isLaunched;
+            if (playerName.equals(roomCreator)) {
+                layoutRoomCreator.setVisibility(View.VISIBLE);
+                if (isLaunched) launched();
+                else notLaunched();
+            }
         }
 
         void phaseNumberUpdate(int phaseNumber) {
@@ -225,28 +348,27 @@ public class PlayActivity extends AppCompatActivity {
                     break;
                 case 1:
                     title += " (Ночь, Мафия)";
-                    if (myRole.equals("Мафия")) btnVote.setEnabled(true);
+                    if (myRole.equals("Мафия") && !voted) btnVote.setEnabled(true);
                     else  btnVote.setEnabled(false);
                     break;
                 case 2:
                     title += " (Ночь, Доктор)";
-                    if (myRole.equals("Доктор")) btnVote.setEnabled(true);
+                    if (myRole.equals("Доктор") && !voted) btnVote.setEnabled(true);
                     else  btnVote.setEnabled(false);
                     break;
                 case 3:
                     title += " (Ночь, Шериф)";
-                    if (myRole.equals("Шериф")) btnVote.setEnabled(true);
+                    if (myRole.equals("Шериф") && !voted) btnVote.setEnabled(true);
                     else  btnVote.setEnabled(false);
                     break;
                 case 4:
                     title += " (Утро)";
-                    btnVote.setEnabled(false);
-                    textSheriffIsRight.setText("Шериф был " + (sheriffIsRight ? "" : "не ") + "прав");
                     textSheriffIsRight.setVisibility(View.VISIBLE);
+                    btnVote.setEnabled(false);
                     break;
                 case 5:
                     title += " (День, Голосование)";
-                    btnVote.setEnabled(true);
+                    if (!voted) btnVote.setEnabled(true);
                     break;
             }
             setTitle(title);
@@ -273,40 +395,11 @@ public class PlayActivity extends AppCompatActivity {
                     break;
             }
             playerImage.setImageResource(myRoleImg);
-//            Handler handler = new Handler(msg -> {
-//                myRole = role;
-//                ImageView playerImage = playerView.findViewById(R.id.imageRole);
-//                switch (myRole) {
-//                    case "Мафия":
-//                        myRoleImg = R.drawable.ic_mafia;
-//                        break;
-//                    case "Доктор":
-//                        myRoleImg = R.drawable.ic_doctor;
-//                        break;
-//                    case "Шериф":
-//                        myRoleImg = R.drawable.ic_sheriff;
-//                        break;
-//                    case "Мирный житель":
-//                        myRoleImg = R.drawable.ic_civilian;
-//                        break;
-//                    default:
-//                        myRoleImg = R.drawable.ic_default;
-//                        break;
-//                }
-//                playerImage.setImageResource(myRoleImg);
-//                return true;
-//            });
-//            new Thread(() -> {
-//                while (playerView == null) {
-//                    try {TimeUnit.MILLISECONDS.sleep(100);}
-//                    catch (InterruptedException e) {e.printStackTrace(); }
-//                }
-//                handler.sendEmptyMessage(0);
-//            }).start();
         }
 
         void sheriffIsRightUpdate(Boolean sheriffIsRight) {
             this.sheriffIsRight = sheriffIsRight;
+            textSheriffIsRight.setText("Шериф был " + (sheriffIsRight ? "" : "не ") + "прав");
         }
 
         void winnersUpdate(String winners, HashMap<String, String> players) {
@@ -358,10 +451,9 @@ public class PlayActivity extends AppCompatActivity {
                 map.put("image", R.drawable.ic_default);
                 list.add(map);
             }
+            myRole = "Player";
             adapter = new MyAdapter(list);
             playerList.setAdapter(adapter);
-
-            Log.d("myLog", "Обновление списка игроков: " + adapter.data.size() + "; " + adapter.views.size() + "; " + playerList.getCount());
         }
 
         void playersWithMyRoleUpdate(ArrayList<String> playersWithMyRole) {
@@ -369,23 +461,96 @@ public class PlayActivity extends AppCompatActivity {
             for (View view: adapter.views)
                 for (String pName : playersWithMyRole)
                     if (((TextView) (view.findViewById(R.id.textName))).getText().equals(pName))
-                        ((ImageView) view.findViewById(R.id.imageRole)).setImageResource(myRoleImg);
-//            Handler handler = new Handler(msg -> {
-//                for (View view: adapter.views)
-//                    for (String pName : playersWithMyRole)
-//                        if (((TextView) (view.findViewById(R.id.textName))).getText().equals(pName))
-//                            ((ImageView) view.findViewById(R.id.imageRole)).setImageResource(myRoleImg);
-//                return true;
-//            });
-//            new Thread(() -> {
-//                while (adapter.views.size() == 0) {
-//                    try {TimeUnit.MILLISECONDS.sleep(100);}
-//                    catch (InterruptedException e) {e.printStackTrace(); }
-//                }
-//                handler.sendEmptyMessage(0);
-//            }).start();
+                        if (!myRole.equals("Мирный житель"))
+                            ((ImageView) view.findViewById(R.id.imageRole)).setImageResource(myRoleImg);
+        }
+
+        void votedUpdate(Boolean voted) {
+            this.voted = voted;
         }
     }
+
+    void launched() {
+
+        Handler nextHandler = new Handler(msg2 -> {
+            if (msg2.arg1 == -1) {
+                Toast.makeText(PlayActivity.this, "Ошибка: " + msg2.obj, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            switch (msg2.what) {
+                case 8:
+                    Toast.makeText(PlayActivity.this, (String) msg2.obj, Toast.LENGTH_SHORT).show();
+                    break;
+            }
+            return true;
+        });
+        View.OnClickListener nextListener = view -> mafia.nextPhase(nextHandler, playerName, roomName, roomPassword);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
+        builder.setTitle("Завершить игру");
+        builder.setMessage("Вы действительно хотите удалить комнату? Прогресс игры будет безвозвратно потерян.");
+        builder.setPositiveButton("Да", (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
+        builder.setNegativeButton("Нет", null);
+
+        btnNext.setText("Следующая фаза");
+        btnNext.setOnClickListener(nextListener);
+        btnGameOver.setOnClickListener(view -> builder.show());
+    }
+
+    void notLaunched() {
+        Handler gameStartHandler = new Handler(msg -> {
+            if (msg.arg1 == -1 || !msg.obj.equals("Игра успешно запущена!")) {
+                Toast.makeText(PlayActivity.this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            switch (msg.what) {
+                case 6:
+                    launched();
+                    Toast.makeText(PlayActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    break;
+            }
+            return true;
+        });
+        View dialogView = getLayoutInflater().inflate(R.layout.create_dialog, null);
+        DialogInterface.OnClickListener createListener = (dialog, which) -> {
+            Integer playersCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editPlayersCount)).getText().toString());
+            Integer mafiaCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editMafiaCount)).getText().toString());
+            Integer doctorCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editDoctorCount)).getText().toString());
+            Integer sheriffCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editSheriffCount)).getText().toString());
+            Integer civilianCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editCivilianCount)).getText().toString());
+            mafia.gameStart(gameStartHandler, playerName, roomName, roomPassword, playersCount, mafiaCount, doctorCount, sheriffCount, civilianCount);
+        };
+        AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
+        builder.setTitle("Запуск игры");
+        builder.setPositiveButton("Начать игру", createListener);
+        builder.setNegativeButton("Отменить", null);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+        btnNext.setOnClickListener(view -> dialog.show());
+
+        btnGameOver.setOnClickListener(view -> {
+            AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this);
+            gameOverDialogBuilder.setTitle("Завершить игру");
+            gameOverDialogBuilder.setMessage("Вы действительно хотите удалить комнату?");
+            gameOverDialogBuilder.setPositiveButton("Да", (dial, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
+            gameOverDialogBuilder.setNegativeButton("Нет", null);
+        });
+    }
+
+    Handler deleteRoomHandler = new Handler(msg2 -> {
+        if (msg2.arg1 == -1 || !msg2.obj.equals("Комната успешно удалена!")) {
+            Toast.makeText(PlayActivity.this, "Ошибка: " + msg2.obj, Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        switch (msg2.what) {
+            case 4:
+                Toast.makeText(PlayActivity.this, (String) msg2.obj, Toast.LENGTH_SHORT).show();
+                roomRun.interrupt();
+                finish();
+                break;
+        }
+        return true;
+    });
 
     @Override
     protected void onDestroy() {
