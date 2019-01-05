@@ -36,23 +36,23 @@ public class Mafia {
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .build();
 
-    Observable<List<RoomList>> playObservable = Observable
+    Observable<List<RoomInfo>> playObservable = Observable
             .interval(0, 1000, TimeUnit.MILLISECONDS)
             .flatMap((Function<Long, ObservableSource<?>>) aLong -> mafiaJSONAPI.getPlayMessage(1234))
-            .map(o -> (List<RoomList>) o)
+            .map(o -> (List<RoomInfo>) o)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread());
 
     private MafiaAPI mafiaJSONAPI = retrofitJSON.create(MafiaAPI.class);
 
-    Observer<List<RoomList>> playObserver = new Observer<List<RoomList>>() {
+    Observer<List<RoomInfo>> playObserver = new Observer<List<RoomInfo>>() {
         @Override
         public void onSubscribe(Disposable d) {
             log("onSubscribe");
         }
 
         @Override
-        public void onNext(List<RoomList> messageList) {
+        public void onNext(List<RoomInfo> messageList) {
             log("onNext: " + messageList.size());
             messageList.forEach(message -> {
                 log("PlayersCount: " + message.getPlayersCount());

@@ -36,17 +36,18 @@ import io.reactivex.disposables.Disposable;
 
 public class PlayActivity extends AppCompatActivity {
 
-    String playerName, roomName, roomPassword, roomCreator;
+    String playerName, roomName, roomPassword, roomMaker;
     View playerView;
     Mafia mafia = Mafia.getInstance();
     ArrayList<HashMap<String, Object>> playersData = new ArrayList<>();
 
     Button btnVote, btnNext, btnGameOver;
-    LinearLayout layoutRoomCreator;
+    LinearLayout layoutRoomMaker;
     TextView textSheriffIsRight;
     GridView playerList;
     MyAdapter adapter;
     Handler playCheckHandler;
+    AlertDialog gameStartDialog;
 
     GameInfo gameInfo;
 
@@ -61,14 +62,14 @@ public class PlayActivity extends AppCompatActivity {
         playerName = intent.getStringExtra("playerName");
         roomName = intent.getStringExtra("roomName");
         roomPassword = intent.getStringExtra("roomPassword");
-        roomCreator = intent.getStringExtra("roomCreator");
+        roomMaker = intent.getStringExtra("roomMaker");
 
         textSheriffIsRight = findViewById(R.id.textSheriffIsRight);
         playerList = findViewById(R.id.playerList);
         btnVote = findViewById(R.id.btnVote);
         btnNext = findViewById(R.id.btnNext);
         btnGameOver = findViewById(R.id.btnGameOver);
-        layoutRoomCreator = findViewById(R.id.layoutRoomCreator);
+        layoutRoomMaker = findViewById(R.id.layoutRoomMaker);
 
         setTitle(roomName + " (Ожидание игроков)");
 
@@ -122,7 +123,7 @@ public class PlayActivity extends AppCompatActivity {
         gameInfo = new GameInfo();
         gameInfo.getPlay();
 
-        if (playerName.equals(roomCreator)) notLaunched();
+        if (playerName.equals(roomMaker)) notLaunched();
 
         roomRun = new Thread(() -> {
             while (true) {
@@ -131,7 +132,6 @@ public class PlayActivity extends AppCompatActivity {
                     TimeUnit.MILLISECONDS.sleep(500);
                     if (roomRun.isInterrupted()) return;
                 } catch (InterruptedException e) {
-                    Log.d("myLog", "Остановка thread: " + e.getLocalizedMessage());
                     return;
                 }
             }
@@ -141,6 +141,7 @@ public class PlayActivity extends AppCompatActivity {
 
     void playCycle(PlayCheck playCheck) {
         if (!playCheck.isLaunched.equals(gameInfo.isLaunched)) gameInfo.isLaunchedUpdate(playCheck.isLaunched);
+        if (!playCheck.voted.equals(gameInfo.voted)) gameInfo.votedUpdate(playCheck.voted);
         if (!playCheck.players.equals(gameInfo.players)) gameInfo.playersUpdate(playCheck.players);
         if (!playCheck.myRole.equals(gameInfo.myRole)) gameInfo.myRoleUpdate(playCheck.myRole);
         if (!playCheck.playerRoles.equals(gameInfo.playerRoles))
@@ -186,7 +187,6 @@ public class PlayActivity extends AppCompatActivity {
             String name = (String) map.get("name");
             String role = (String) map.get("role");
             boolean isAlive = !map.get("isAlive").equals("dead");
-            Log.d("myTag", map.get("isAlive") + ", " + isAlive + ", ");
 
             int img;
             assert role != null;
@@ -228,21 +228,24 @@ public class PlayActivity extends AppCompatActivity {
     }
     
     private class GameInfo extends PlayCheck {
+        boolean isAlive;
         void getPlay() {
             isLaunched = false;
+            isAlive = true;
             phaseNumber = -1;
             myRole = "Player";
             sheriffIsRight = false;
             winners = "none";
             voteCount = 0;
+            voted = false;
             players = new HashMap<>();
             playerRoles = new HashMap<>();
         }
 
         void isLaunchedUpdate(Boolean isLaunched) {
             this.isLaunched = isLaunched;
-            if (playerName.equals(roomCreator)) {
-                layoutRoomCreator.setVisibility(View.VISIBLE);
+            if (playerName.equals(roomMaker)) {
+                layoutRoomMaker.setVisibility(View.VISIBLE);
                 if (isLaunched) launched();
                 else notLaunched();
             }
@@ -259,18 +262,17 @@ public class PlayActivity extends AppCompatActivity {
                     break;
                 case 1:
                     title += " (Ночь, Мафия)";
-                    Log.d("myTag", "Ночь мафии");
-                    if (myRole.equals("Мафия")) btnVote.setEnabled(true);
+                    if (myRole.equals("Мафия") && !voted && isAlive) btnVote.setEnabled(true);
                     else btnVote.setEnabled(false);
                     break;
                 case 2:
                     title += " (Ночь, Доктор)";
-                    if (myRole.equals("Доктор")) btnVote.setEnabled(true);
+                    if (myRole.equals("Доктор") && !voted && isAlive) btnVote.setEnabled(true);
                     else btnVote.setEnabled(false);
                     break;
                 case 3:
                     title += " (Ночь, Шериф)";
-                    if (myRole.equals("Шериф")) btnVote.setEnabled(true);
+                    if (myRole.equals("Шериф") && !voted && isAlive) btnVote.setEnabled(true);
                     else  btnVote.setEnabled(false);
                     break;
                 case 4:
@@ -280,7 +282,7 @@ public class PlayActivity extends AppCompatActivity {
                     break;
                 case 5:
                     title += " (День, Голосование)";
-                    btnVote.setEnabled(true);
+                    if (!voted && isAlive) btnVote.setEnabled(true);
                     break;
             }
             setTitle(title);
@@ -302,21 +304,52 @@ public class PlayActivity extends AppCompatActivity {
 
         void winnersUpdate(String winners) {
             this.winners = winners;
-            if (winners.equals("Мирные жители")) {
+            if (winners.equals("Мирные жители") || winners.equals("Мафия")) {
                 btnVote.setEnabled(false);
+                btnNext.setText("Начать заново");
+                btnNext.setOnClickListener(view -> gameStartDialog.show());
                 textSheriffIsRight.setVisibility(View.VISIBLE);
-                textSheriffIsRight.setText("Победили Мирные жители!");
-            }
-            if (winners.equals("Мафия")) {
-                btnVote.setEnabled(false);
-                textSheriffIsRight.setVisibility(View.VISIBLE);
-                textSheriffIsRight.setText("Победила Мафия!");
+                if (winners.equals("Мирные жители")) textSheriffIsRight.setText("Победили Мирные жители!");
+                if (winners.equals("Мафия")) textSheriffIsRight.setText("Победила Мафия!");
+
+                if (playerName.equals(roomMaker)) {
+                    Handler winHandler = new Handler(msg -> {
+                        if (msg.arg1 == -1 || !msg.obj.equals("Игра успешно завершена!")) {
+                            Toast.makeText(PlayActivity.this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                            return true;
+                        }
+                        switch (msg.what) {
+                            case 5:
+                                Toast.makeText(PlayActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                                AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
+                                builder.setTitle("Закрыть комнату");
+                                builder.setMessage("Игра была завершена. Вы хотите закрыть комнату?");
+                                builder.setPositiveButton("Да", (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
+                                builder.setNegativeButton("Нет", null);
+
+                                btnGameOver.setOnClickListener(view -> builder.show());
+                                break;
+                        }
+                        return true;
+                    });
+                    mafia.gameOver(winHandler, playerName, roomName, roomPassword);
+                }
+                playerRolesUpdate(playerRoles);
+            } else {
+                textSheriffIsRight.setText("Шериф был не прав");
+                textSheriffIsRight.setVisibility(View.GONE);
+                playersUpdate(players);
             }
         }
 
         void voteCountUpdate(int voteCount) {
             this.voteCount = voteCount;
-            if (playerName.equals(roomCreator)) btnVote.setText("Проголосовать (" + voteCount + ")");
+            if (playerName.equals(roomMaker)) btnVote.setText("Проголосовать (" + voteCount + ")");
+        }
+
+        void votedUpdate(boolean voted) {
+            this.voted = voted;
+            btnVote.setEnabled(!voted);
         }
 
         void playersUpdate(HashMap<String, String> players) {
@@ -330,17 +363,18 @@ public class PlayActivity extends AppCompatActivity {
                 map.put("isAlive", entry.getValue());
                 if (entry.getKey().equals(playerName)) map.put("role", myRole);
                 playersData.add(map);
+
+                if (entry.getKey().equals(playerName))
+                    isAlive = !entry.getValue().equals("dead");
             }
             playerRolesUpdate(playerRoles);
-            adapter = new MyAdapter(playersData);
-            playerList.setAdapter(adapter);
         }
 
         void playerRolesUpdate(HashMap<String, String> playerRoles) {
             this.playerRoles = playerRoles;
             for (Map.Entry<String, String> entry: playerRoles.entrySet())
                 for (HashMap<String, Object> map : playersData)
-                    if (entry.getKey().equals(map.get("name")))
+                    if (entry.getKey().equals(map.get("name")) && (!entry.getValue().equals("Мирный житель") || !winners.equals("none")))
                         map.put("role", entry.getValue());
             adapter = new MyAdapter(playersData);
             playerList.setAdapter(adapter);
@@ -374,7 +408,7 @@ public class PlayActivity extends AppCompatActivity {
     }
 
     void notLaunched() {
-        findViewById(R.id.layoutRoomCreator).setVisibility(View.VISIBLE);
+        findViewById(R.id.layoutRoomMaker).setVisibility(View.VISIBLE);
         Handler gameStartHandler = new Handler(msg -> {
             if (msg.arg1 == -1 || !msg.obj.equals("Игра успешно запущена!")) {
                 Toast.makeText(PlayActivity.this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
@@ -390,11 +424,16 @@ public class PlayActivity extends AppCompatActivity {
         });
         View dialogView = getLayoutInflater().inflate(R.layout.create_dialog, null);
         DialogInterface.OnClickListener createListener = (dialog, which) -> {
-            Integer playersCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editPlayersCount)).getText().toString());
-            Integer mafiaCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editMafiaCount)).getText().toString());
-            Integer doctorCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editDoctorCount)).getText().toString());
-            Integer sheriffCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editSheriffCount)).getText().toString());
-            Integer civilianCount = Integer.parseInt(((EditText) dialogView.findViewById(R.id.editCivilianCount)).getText().toString());
+            String pCount = ((EditText) dialogView.findViewById(R.id.editPlayersCount)).getText().toString();
+            Integer playersCount = pCount.equals("") ? 0 : Integer.parseInt(pCount);
+            String mCount = ((EditText) dialogView.findViewById(R.id.editMafiaCount)).getText().toString();
+            Integer mafiaCount = mCount.equals("") ? 0 : Integer.parseInt(mCount);
+            String dCount = ((EditText) dialogView.findViewById(R.id.editDoctorCount)).getText().toString();
+            Integer doctorCount = dCount.equals("") ? 0 : Integer.parseInt(dCount);
+            String sCount = ((EditText) dialogView.findViewById(R.id.editSheriffCount)).getText().toString();
+            Integer sheriffCount = sCount.equals("") ? 0 : Integer.parseInt(sCount);
+            String cCount = ((EditText) dialogView.findViewById(R.id.editCivilianCount)).getText().toString();
+            Integer civilianCount = cCount.equals("") ? 0 : Integer.parseInt(cCount);
             mafia.gameStart(gameStartHandler, playerName, roomName, roomPassword, playersCount, mafiaCount, doctorCount, sheriffCount, civilianCount);
         };
         AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
@@ -402,8 +441,8 @@ public class PlayActivity extends AppCompatActivity {
         builder.setPositiveButton("Начать игру", createListener);
         builder.setNegativeButton("Отменить", null);
         builder.setView(dialogView);
-        AlertDialog dialog = builder.create();
-        btnNext.setOnClickListener(view -> dialog.show());
+        gameStartDialog = builder.create();
+        btnNext.setOnClickListener(view -> gameStartDialog.show());
 
         btnGameOver.setOnClickListener(view -> {
             AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this);
@@ -422,6 +461,7 @@ public class PlayActivity extends AppCompatActivity {
         switch (msg2.what) {
             case 4:
                 Toast.makeText(PlayActivity.this, (String) msg2.obj, Toast.LENGTH_SHORT).show();
+                playCheckHandler = new Handler();
                 roomRun.interrupt();
                 finish();
                 break;
@@ -432,7 +472,6 @@ public class PlayActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         roomRun.interrupt();
-        Log.d("myLog", "onDestroy");
         super.onDestroy();
     }
 }
