@@ -8,7 +8,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,12 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 
 public class PlayActivity extends AppCompatActivity {
 
@@ -422,7 +415,7 @@ public class PlayActivity extends AppCompatActivity {
             }
             return true;
         });
-        View dialogView = getLayoutInflater().inflate(R.layout.create_dialog, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.start_dialog, null);
         DialogInterface.OnClickListener createListener = (dialog, which) -> {
             String pCount = ((EditText) dialogView.findViewById(R.id.editPlayersCount)).getText().toString();
             Integer playersCount = pCount.equals("") ? 0 : Integer.parseInt(pCount);
@@ -444,13 +437,13 @@ public class PlayActivity extends AppCompatActivity {
         gameStartDialog = builder.create();
         btnNext.setOnClickListener(view -> gameStartDialog.show());
 
-        btnGameOver.setOnClickListener(view -> {
-            AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this);
-            gameOverDialogBuilder.setTitle("Завершить игру");
-            gameOverDialogBuilder.setMessage("Вы действительно хотите удалить комнату?");
-            gameOverDialogBuilder.setPositiveButton("Да", (dial, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
-            gameOverDialogBuilder.setNegativeButton("Нет", null);
-        });
+        AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this);
+        gameOverDialogBuilder.setTitle("Завершить игру");
+        gameOverDialogBuilder.setMessage("Вы действительно хотите удалить комнату?");
+        gameOverDialogBuilder.setPositiveButton("Да", (dial, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
+        gameOverDialogBuilder.setNegativeButton("Нет", null);
+
+        btnGameOver.setOnClickListener(view -> gameOverDialogBuilder.show());
     }
 
     Handler deleteRoomHandler = new Handler(msg2 -> {

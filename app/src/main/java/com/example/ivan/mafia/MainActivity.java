@@ -11,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.AlertDialogLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,9 @@ public class MainActivity extends AppCompatActivity {
     Mafia mafia = Mafia.getInstance();
     ArrayList<HashMap<String, Object>> roomsData;
     RoomInfo[] roomList;
+
+    AlertDialog roomCreateDialog;
+    View.OnClickListener onCreateRoomListener;
 
     Button btnCreate, btnConnect, btnSettings, btnAbout;
     TextView textAccount, textSignOut;
@@ -82,10 +86,7 @@ public class MainActivity extends AppCompatActivity {
             }
             switch (msg.what) {
                 case 1:
-                    if (message.equals("OK")) {
-                        Toast.makeText(this, "Проверка аккаунта: Успешно!", Toast.LENGTH_SHORT).show();
-                        start();
-                    }
+                    if (message.equals("OK")) start();
                     else {
                         Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
                         LoginActivity.saveNameAndPassword(sPrefs, null, null);
@@ -112,16 +113,12 @@ public class MainActivity extends AppCompatActivity {
         btnAbout = findViewById(R.id.btnAbout);
 
 
-        btnSettings.setOnClickListener(view -> {
-            Intent intent = new Intent(this, PlayActivity.class);
-            intent.putExtra("playerName", savedName);
-            intent.putExtra("roomName", "Комната1");
-            intent.putExtra("roomPassword", "123");
-            intent.putExtra("roomCreator", "Иван2");
-            startActivity(intent);
-        });
+        btnSettings.setOnClickListener(view -> {});
         btnCreate.setOnClickListener(view -> {
-
+            roomCreateDialog.show();
+            ((EditText) roomCreateDialog.findViewById(R.id.editRoomName)).setText("");
+            ((EditText) roomCreateDialog.findViewById(R.id.editRoomPassword)).setText("");
+            roomCreateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(onCreateRoomListener);
         });
         btnConnect.setOnClickListener(view -> mafia.checkRooms(playHandler));
 
@@ -133,22 +130,39 @@ public class MainActivity extends AppCompatActivity {
         });
         findViewById(R.id.progressBar).setVisibility(View.GONE);
 
+        onCreateRoomListener = view -> {
+            rName = ((EditText) roomCreateDialog.findViewById(R.id.editRoomName)).getText().toString();
+            if (rName.length() < 3) {
+                Toast.makeText(this, "Название комнаты должно быть не менее 3 символов", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            rPass = ((EditText) roomCreateDialog.findViewById(R.id.editRoomPassword)).getText().toString();
+            roomCreateDialog.dismiss();
+            mafia.createRoom(playHandler, savedName, rName, rPass);
+        };
+        roomCreateDialog = new AlertDialog.Builder(this)
+                .setTitle("Создание комнаты")
+                .setView(getLayoutInflater().inflate(R.layout.create_dialog, null))
+                .setPositiveButton("Создать комнату", null)
+                .setNegativeButton("Отменить", null)
+                .create();
+
 
         DialogInterface.OnClickListener roomSelectListener = (dialog1, position) -> {
             rName = (String) roomsData.get(position).get("roomName");
             rPass = "";
             rMaker = roomList[position].getRoomMaker();
-            if (roomList[position].getPassword()) {
-                AlertDialog.Builder roomPasswordDialogBuilder = new AlertDialog.Builder(this);
-                roomPasswordDialogBuilder.setTitle("Пароль");
-                roomPasswordDialogBuilder.setView(getLayoutInflater().inflate(R.layout.password_dialog, null));
-                roomPasswordDialogBuilder.setPositiveButton("Ок", (dialog2, w2) -> {
-                    rPass = ((EditText) ((AlertDialog) dialog2).findViewById(R.id.editPassword)).getText().toString();
-                    mafia.joinRoom(playHandler, savedName, rName, rPass);
-                });
-                roomPasswordDialogBuilder.setNegativeButton("Отменить", null);
-                roomPasswordDialogBuilder.show();
-            } else mafia.joinRoom(playHandler, savedName, rName, rPass);
+            if (roomList[position].getPassword())
+                new AlertDialog.Builder(this)
+                        .setTitle("Пароль")
+                        .setView(getLayoutInflater().inflate(R.layout.password_dialog, null))
+                        .setPositiveButton("Ок", (dialog2, w2) -> {
+                            rPass = ((EditText) ((AlertDialog) dialog2).findViewById(R.id.editPassword)).getText().toString();
+                            mafia.joinRoom(playHandler, savedName, rName, rPass);
+                        })
+                        .setNegativeButton("Отменить", null)
+                        .show();
+            else mafia.joinRoom(playHandler, savedName, rName, rPass);
         };
 
         playHandler = new Handler(msg -> {
@@ -174,19 +188,17 @@ public class MainActivity extends AppCompatActivity {
                         map.put("password", room.getPassword());
                         roomsData.add(map);
                     }
-                    AlertDialog.Builder roomsDialogBuilder = new AlertDialog.Builder(this);
-                    roomsDialogBuilder.setAdapter(new RoomListAdapter(), roomSelectListener);
-                    roomsDialogBuilder.show();
+                    new AlertDialog.Builder(this).setAdapter(new RoomListAdapter(), roomSelectListener).show();
                     break;
                 case 3:
                     if (message.equals("Комната с таким названием уже существует!")) {
                         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                         return true;
                     }
-                    intentPlay.putExtra("playerName", savedName);
-                    intentPlay.putExtra("roomName", "Комната1");
-                    intentPlay.putExtra("roomPassword", "123");
-                    intentPlay.putExtra("roomMaker", savedName);
+                    intentPlay.putExtra("playerName", savedName)
+                            .putExtra("roomName", rName)
+                            .putExtra("roomPassword", rPass)
+                            .putExtra("roomMaker", savedName);
                     startActivity(intentPlay);
                     break;
                 case 7:
@@ -196,11 +208,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (message.equals("Вы не можете присоединиться к игре, так как она уже началась"))
                         Toast.makeText(this, "Попытка подключиться к игре", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(this, PlayActivity.class);
-                    intent.putExtra("playerName", savedName);
-                    intent.putExtra("roomName", rName);
-                    intent.putExtra("roomPassword", rPass);
-                    intent.putExtra("roomMaker", rMaker);
+                    Intent intent = new Intent(this, PlayActivity.class)
+                            .putExtra("playerName", savedName)
+                            .putExtra("roomName", rName)
+                            .putExtra("roomPassword", rPass)
+                            .putExtra("roomMaker", rMaker);
                     startActivity(intent);
                     break;
             }
