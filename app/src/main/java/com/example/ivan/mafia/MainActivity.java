@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         btnAbout = findViewById(R.id.btnAbout);
 
 
-        btnSettings.setOnClickListener(view -> {});
+
         btnCreate.setOnClickListener(view -> {
             roomCreateDialog.show();
             ((EditText) roomCreateDialog.findViewById(R.id.editRoomName)).setText("");
@@ -121,6 +121,8 @@ public class MainActivity extends AppCompatActivity {
             roomCreateDialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(onCreateRoomListener);
         });
         btnConnect.setOnClickListener(view -> mafia.checkRooms(playHandler));
+        btnSettings.setOnClickListener(view -> startActivity(new Intent(this, SettingsActivity.class)));
+        btnAbout.setOnClickListener(view -> startActivity(new Intent(this, AboutActivity.class)));
 
         textAccount.setText(savedName);
         textSignOut.setVisibility(View.VISIBLE);
