@@ -19,7 +19,7 @@
             android:id="@+id/textPlayersCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Количество игроков: "
+            android:text="@string/playersCount"
             android:textSize="17sp" />
 
         <EditText
@@ -40,7 +40,7 @@
             android:id="@+id/textMafiaCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Количество Мафий: "
+            android:text="@string/mafiaCount"
             android:textSize="17sp" />
 
         <EditText
@@ -61,7 +61,7 @@
             android:id="@+id/textDoctorCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Количество Докторов: "
+            android:text="@string/doctorCount"
             android:textSize="17sp" />
 
         <EditText
@@ -82,7 +82,7 @@
             android:id="@+id/textSheriffCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Количество Шерифов: "
+            android:text="@string/sheriffCount"
             android:textSize="17sp" />
 
         <EditText
@@ -103,7 +103,7 @@
             android:id="@+id/textCivilianCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Количество Мирных жителей: "
+            android:text="@string/civilianCount"
             android:textSize="17sp" />
 
         <EditText

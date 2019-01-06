@@ -11,7 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="Название комнаты"
+        android:hint="@string/roomName"
+        android:autofillHints="roomName"
         android:inputType="textPersonName" />
 
     <EditText
@@ -19,13 +20,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="Пароль (Необязательно)"
-        android:inputType="textPersonName" />
+        android:hint="@string/roomPassword"
+        android:autofillHints="roomPassword"
+        android:inputType="textVisiblePassword" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
-        android:text="Вы можете оставить поле ввода пароля пустым, и в созданную комнату сможет войти любой игрок" />
+        android:text="@string/createRoomAbout" />
 </LinearLayout>

@@ -81,14 +81,14 @@ public class MainActivity extends AppCompatActivity {
                     textAccount.setText(R.string.account_check);
                     textAccount.setOnClickListener(null);
                 });
-                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + message, Toast.LENGTH_SHORT).show();
                 return true;
             }
             switch (msg.what) {
                 case 1:
                     if (message.equals("OK")) start();
                     else {
-                        Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.logError) + message, Toast.LENGTH_SHORT).show();
                         LoginActivity.saveNameAndPassword(sPrefs, null, null);
                         startActivityForResult(intentLogin, 0);
                     }
@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
         onCreateRoomListener = view -> {
             rName = ((EditText) roomCreateDialog.findViewById(R.id.editRoomName)).getText().toString();
             if (rName.length() < 3) {
-                Toast.makeText(this, "Название комнаты должно быть не менее 3 символов", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.roomNameMustBe), Toast.LENGTH_SHORT).show();
                 return;
             }
             rPass = ((EditText) roomCreateDialog.findViewById(R.id.editRoomPassword)).getText().toString();
@@ -143,10 +143,10 @@ public class MainActivity extends AppCompatActivity {
             mafia.createRoom(playHandler, savedName, rName, rPass);
         };
         roomCreateDialog = new AlertDialog.Builder(this)
-                .setTitle("Создание комнаты")
+                .setTitle(getString(R.string.roomCreating))
                 .setView(getLayoutInflater().inflate(R.layout.create_dialog, null))
-                .setPositiveButton("Создать комнату", null)
-                .setNegativeButton("Отменить", null)
+                .setPositiveButton(getString(R.string.roomCreate), null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .create();
 
 
@@ -156,13 +156,13 @@ public class MainActivity extends AppCompatActivity {
             rMaker = roomList[position].getRoomMaker();
             if (roomList[position].getPassword())
                 new AlertDialog.Builder(this)
-                        .setTitle("Пароль")
+                        .setTitle(getString(R.string.password))
                         .setView(getLayoutInflater().inflate(R.layout.password_dialog, null))
-                        .setPositiveButton("Ок", (dialog2, w2) -> {
+                        .setPositiveButton(getString(R.string.ok), (dialog2, w2) -> {
                             rPass = ((EditText) ((AlertDialog) dialog2).findViewById(R.id.editPassword)).getText().toString();
                             mafia.joinRoom(playHandler, savedName, rName, rPass);
                         })
-                        .setNegativeButton("Отменить", null)
+                        .setNegativeButton(getString(R.string.cancel), null)
                         .show();
             else mafia.joinRoom(playHandler, savedName, rName, rPass);
         };
@@ -170,14 +170,14 @@ public class MainActivity extends AppCompatActivity {
         playHandler = new Handler(msg -> {
             String message = (String) msg.obj;
             if (msg.arg1 == -1) {
-                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + message, Toast.LENGTH_SHORT).show();
                 return true;
             }
             switch (msg.what) {
                 case 2:
                     roomList = new Gson().fromJson(message, RoomInfo[].class);
                     if (roomList == null) {
-                        Toast.makeText(this, "Нет созданных комнат", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.noCreatedRooms), Toast.LENGTH_SHORT).show();
                         return true;
                     }
                     roomsData = new ArrayList<>(roomList.length);

@@ -45,70 +45,70 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void signInMode() {
-        textNoAccount.setText("Нет аккаунта? ");
-        textRegister.setText("Зарегистрироваться");
+        textNoAccount.setText(getString(R.string.noAccount));
+        textRegister.setText(getString(R.string.registerAccount));
         textRegister.setOnClickListener(textReg -> registerMode());
 
-        btnSignIn.setText("Войти");
+        btnSignIn.setText(getString(R.string.joinAccount));
         btnSignIn.setOnClickListener(view -> {
             name = editName.getText().toString();
             password = editPassword.getText().toString();
             if (name.length() < minNameChars)
-                Toast.makeText(this, "Имя должно быть больше " + minNameChars + " символов", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.nameMustBe) + minNameChars + getString(R.string.symbol), Toast.LENGTH_SHORT).show();
             else if (password.length() < minPasswordChars)
-                Toast.makeText(this, "Пароль должен быть больше " + minPasswordChars + " символов", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.passwordMustBe) + minPasswordChars + getString(R.string.symbol), Toast.LENGTH_SHORT).show();
             else mafia.signIn(handler, name, password);
         });
 
         handler = new Handler(msg -> {
             String message = (String) msg.obj;
             if (msg.arg1 == -1) {
-                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + message, Toast.LENGTH_SHORT).show();
                 return true;
             }
             if (msg.what == 11) {
                 if (message.equals("OK")) {
                     saveNameAndPassword(getSharedPreferences("prefs", MODE_PRIVATE), name, password);
-                    Toast.makeText(this, "Вы успешно вошли в аккаунт!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.logToAccountSuccess), Toast.LENGTH_SHORT).show();
                     setResult(1, new Intent().putExtra("name", name));
                     finish();
                 }
-                else Toast.makeText(this, "Ошибка авторизации: " + message, Toast.LENGTH_SHORT).show();
+                else Toast.makeText(this, getString(R.string.logError) + message, Toast.LENGTH_SHORT).show();
             }
             return true;
         });
     }
 
     private void registerMode() {
-        textNoAccount.setText("Уже зарегистрированы? ");
-        textRegister.setText("Войти");
+        textNoAccount.setText(getString(R.string.alreadyRegistered));
+        textRegister.setText(getString(R.string.joinAccount));
         textRegister.setOnClickListener(textRegister2 -> signInMode());
 
-        btnSignIn.setText("Зарегистрироваться");
+        btnSignIn.setText(getString(R.string.registerAccount));
         btnSignIn.setOnClickListener(btnSignIn -> {
             name = editName.getText().toString();
             password = editPassword.getText().toString();
             if (name.length() < minNameChars)
-                Toast.makeText(this, "Имя должно быть больше " + minNameChars + " символов", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.nameMustBe) + minNameChars + getString(R.string.symbol), Toast.LENGTH_SHORT).show();
             else if (password.length() < minPasswordChars)
-                Toast.makeText(this, "Пароль должен быть больше " + minPasswordChars + " символов", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.passwordMustBe) + minPasswordChars + getString(R.string.symbol), Toast.LENGTH_SHORT).show();
             else mafia.register(handler, name, password);
         });
 
         handler = new Handler(msg -> {
             String message = (String) msg.obj;
             if (msg.arg1 == -1) {
-                Toast.makeText(this, "Ошибка: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + message, Toast.LENGTH_SHORT).show();
                 return true;
             }
             if (msg.what == 10) {
-                if (message.equals("Аккаунт успешно создан!")) {
+                if (message.equals(getString(R.string.accountCreatingSuccess))) {
                     saveNameAndPassword(getSharedPreferences("prefs", MODE_PRIVATE), name, password);
-                    Toast.makeText(this, "Вы успешно зарегистрировались!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.registerSuccess), Toast.LENGTH_SHORT).show();
                     setResult(1, new Intent().putExtra("name", name));
                     finish();
                 }
-                else Toast.makeText(this, "Ошибка регистрации: " + message, Toast.LENGTH_SHORT).show();
+                else Toast.makeText(this, getString(R.string.regError) + message, Toast.LENGTH_SHORT).show();
             }
             return true;
         });

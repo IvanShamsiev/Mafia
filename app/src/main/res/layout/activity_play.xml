@@ -12,14 +12,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:text="Шериф был не прав"
+        android:text="@string/sheriffIsNotRight"
         android:textSize="25sp"
         android:visibility="gone" />
 
     <GridView
         android:id="@+id/playerList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1" >
     </GridView>
 
@@ -42,21 +42,21 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:elevation="0dp"
-                android:text="Начать игру" />
+                android:text="@string/gameStart" />
 
             <Button
                 android:id="@+id/btnGameOver"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Удалить комнату" />
+                android:text="@string/deleteRoom" />
         </LinearLayout>
 
         <Button
             android:id="@+id/btnVote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Проголосовать" />
+            android:text="@string/vote" />
     </LinearLayout>
 
 </LinearLayout>

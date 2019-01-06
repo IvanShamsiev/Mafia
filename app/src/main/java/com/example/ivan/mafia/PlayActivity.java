@@ -64,13 +64,13 @@ public class PlayActivity extends AppCompatActivity {
         btnGameOver = findViewById(R.id.btnGameOver);
         layoutRoomMaker = findViewById(R.id.layoutRoomMaker);
 
-        setTitle(roomName + " (Ожидание игроков)");
+        setTitle(roomName + " (" + getString(R.string.playersWait) + ")");
 
         playerList.setNumColumns(GridView.AUTO_FIT);
 
         Handler voteHandler = new Handler(msg -> {
             if (msg.arg1 == -1) {
-                Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + msg.obj, Toast.LENGTH_SHORT).show();
                 return true;
             }
             switch (msg.what) {
@@ -82,24 +82,23 @@ public class PlayActivity extends AppCompatActivity {
             return true;
         });
         btnVote.setOnClickListener(view -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
             String[] players = new String[playersData.size()];
-            for (int i = 0; i < playersData.size(); i++)
-                players[i] = ((String) playersData.get(i).get("name"));
-            builder.setSingleChoiceItems(players, 0, null);
-            builder.setPositiveButton("Проголосовать", (dialog, which) -> mafia.vote(voteHandler, playerName, roomName, roomPassword, players[(((AlertDialog) dialog).getListView()).getCheckedItemPosition()]));
-            builder.setNegativeButton("Отмена", null);
-            builder.show();
+            for (int i = 0; i < playersData.size(); i++) players[i] = ((String) playersData.get(i).get("name"));
+            new AlertDialog.Builder(this)
+                    .setSingleChoiceItems(players, 0, null)
+                    .setPositiveButton(getString(R.string.vote), (dialog, which) -> mafia.vote(voteHandler, playerName, roomName, roomPassword, players[(((AlertDialog) dialog).getListView()).getCheckedItemPosition()]))
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .show();
         });
         btnVote.setEnabled(false);
 
         playCheckHandler = new Handler(msg -> {
             if (msg.arg1 == -1 ) {
-                Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + msg.obj, Toast.LENGTH_SHORT).show();
                 return true;
             }
             if (msg.obj.equals("Вы не являетесь игроком!") || msg.obj.equals("Комната с таким названием и паролем не существует")) {
-                Toast.makeText(this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error) + msg.obj, Toast.LENGTH_SHORT).show();
                 roomRun.interrupt();
                 finish();
                 return true;
@@ -292,33 +291,33 @@ public class PlayActivity extends AppCompatActivity {
 
         void sheriffIsRightUpdate(Boolean sheriffIsRight) {
             this.sheriffIsRight = sheriffIsRight;
-            textSheriffIsRight.setText("Шериф был " + (sheriffIsRight ? "" : "не ") + "прав");
+            textSheriffIsRight.setText(getString(R.string.sheriffIs) + (sheriffIsRight ? "" : getString(R.string.not)) + getString(R.string.right));
         }
 
         void winnersUpdate(String winners) {
             this.winners = winners;
             if (winners.equals("Мирные жители") || winners.equals("Мафия")) {
                 btnVote.setEnabled(false);
-                btnNext.setText("Начать заново");
+                btnNext.setText(getString(R.string.restart));
                 btnNext.setOnClickListener(view -> gameStartDialog.show());
                 textSheriffIsRight.setVisibility(View.VISIBLE);
-                if (winners.equals("Мирные жители")) textSheriffIsRight.setText("Победили Мирные жители!");
-                if (winners.equals("Мафия")) textSheriffIsRight.setText("Победила Мафия!");
+                if (winners.equals("Мирные жители")) textSheriffIsRight.setText(getString(R.string.civiliansWin));
+                if (winners.equals("Мафия")) textSheriffIsRight.setText(getString(R.string.mafiaWin));
 
                 if (playerName.equals(roomMaker)) {
                     Handler winHandler = new Handler(msg -> {
                         if (msg.arg1 == -1 || !msg.obj.equals("Игра успешно завершена!")) {
-                            Toast.makeText(PlayActivity.this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PlayActivity.this, getString(R.string.error) + msg.obj, Toast.LENGTH_SHORT).show();
                             return true;
                         }
                         switch (msg.what) {
                             case 5:
                                 Toast.makeText(PlayActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
-                                AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
-                                builder.setTitle("Закрыть комнату");
-                                builder.setMessage("Игра была завершена. Вы хотите закрыть комнату?");
-                                builder.setPositiveButton("Да", (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
-                                builder.setNegativeButton("Нет", null);
+                                AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this)
+                                        .setTitle(getString(R.string.closeRoom))
+                                        .setMessage(getString(R.string.closeRoomMessage))
+                                        .setPositiveButton(getString(R.string.yes), (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword))
+                                        .setNegativeButton(getString(R.string.no), null);
 
                                 btnGameOver.setOnClickListener(view -> builder.show());
                                 break;
@@ -329,7 +328,7 @@ public class PlayActivity extends AppCompatActivity {
                 }
                 playerRolesUpdate(playerRoles);
             } else {
-                textSheriffIsRight.setText("Шериф был не прав");
+                textSheriffIsRight.setText(getString(R.string.sheriffIsNotRight));
                 textSheriffIsRight.setVisibility(View.GONE);
                 playersUpdate(players);
             }
@@ -337,7 +336,7 @@ public class PlayActivity extends AppCompatActivity {
 
         void voteCountUpdate(int voteCount) {
             this.voteCount = voteCount;
-            if (playerName.equals(roomMaker)) btnVote.setText("Проголосовать (" + voteCount + ")");
+            if (playerName.equals(roomMaker)) btnVote.setText(getString(R.string.vote) + " (" + voteCount + ")");
         }
 
         void votedUpdate(boolean voted) {
@@ -377,7 +376,7 @@ public class PlayActivity extends AppCompatActivity {
     void launched() {
         Handler nextHandler = new Handler(msg2 -> {
             if (msg2.arg1 == -1) {
-                Toast.makeText(PlayActivity.this, "Ошибка: " + msg2.obj, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PlayActivity.this, getString(R.string.error) + msg2.obj, Toast.LENGTH_SHORT).show();
                 return true;
             }
             switch (msg2.what) {
@@ -389,13 +388,13 @@ public class PlayActivity extends AppCompatActivity {
         });
         View.OnClickListener nextListener = view -> mafia.nextPhase(nextHandler, playerName, roomName, roomPassword);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
-        builder.setTitle("Завершить игру");
-        builder.setMessage("Вы действительно хотите удалить комнату? Прогресс игры будет безвозвратно потерян.");
-        builder.setPositiveButton("Да", (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
-        builder.setNegativeButton("Нет", null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this)
+                .setTitle(getString(R.string.gameOver))
+                .setMessage(getString(R.string.gameOverMessage1) + getString(R.string.gameOverMessage2))
+                .setPositiveButton(getString(R.string.yes), (dialog, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword))
+                .setNegativeButton(getString(R.string.no), null);
 
-        btnNext.setText("Следующая фаза");
+        btnNext.setText(getString(R.string.nextPhase));
         btnNext.setOnClickListener(nextListener);
         btnGameOver.setOnClickListener(view -> builder.show());
     }
@@ -403,8 +402,8 @@ public class PlayActivity extends AppCompatActivity {
     void notLaunched() {
         findViewById(R.id.layoutRoomMaker).setVisibility(View.VISIBLE);
         Handler gameStartHandler = new Handler(msg -> {
-            if (msg.arg1 == -1 || !msg.obj.equals("Игра успешно запущена!")) {
-                Toast.makeText(PlayActivity.this, "Ошибка: " + msg.obj, Toast.LENGTH_SHORT).show();
+            if (msg.arg1 == -1 || !msg.obj.equals(getString(R.string.gameStarted))) {
+                Toast.makeText(PlayActivity.this, getString(R.string.error) + msg.obj, Toast.LENGTH_SHORT).show();
                 return true;
             }
             switch (msg.what) {
@@ -429,26 +428,27 @@ public class PlayActivity extends AppCompatActivity {
             Integer civilianCount = cCount.equals("") ? 0 : Integer.parseInt(cCount);
             mafia.gameStart(gameStartHandler, playerName, roomName, roomPassword, playersCount, mafiaCount, doctorCount, sheriffCount, civilianCount);
         };
-        AlertDialog.Builder builder = new AlertDialog.Builder(PlayActivity.this);
-        builder.setTitle("Запуск игры");
-        builder.setPositiveButton("Начать игру", createListener);
-        builder.setNegativeButton("Отменить", null);
-        builder.setView(dialogView);
-        gameStartDialog = builder.create();
+
+        gameStartDialog = new AlertDialog.Builder(PlayActivity.this)
+                .setTitle(getString(R.string.gameStarting))
+                .setPositiveButton(getString(R.string.gameStart), createListener)
+                .setNegativeButton(getString(R.string.cancel), null)
+                .setView(dialogView)
+                .create();
         btnNext.setOnClickListener(view -> gameStartDialog.show());
 
-        AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this);
-        gameOverDialogBuilder.setTitle("Завершить игру");
-        gameOverDialogBuilder.setMessage("Вы действительно хотите удалить комнату?");
-        gameOverDialogBuilder.setPositiveButton("Да", (dial, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword));
-        gameOverDialogBuilder.setNegativeButton("Нет", null);
+        AlertDialog.Builder gameOverDialogBuilder = new AlertDialog.Builder(PlayActivity.this)
+                .setTitle(getString(R.string.gameOver))
+                .setMessage(getString(R.string.gameOverMessage1))
+                .setPositiveButton(getString(R.string.yes), (dial, which) -> mafia.deleteRoom(deleteRoomHandler, playerName, roomName, roomPassword))
+                .setNegativeButton(getString(R.string.no), null);
 
         btnGameOver.setOnClickListener(view -> gameOverDialogBuilder.show());
     }
 
     Handler deleteRoomHandler = new Handler(msg2 -> {
-        if (msg2.arg1 == -1 || !msg2.obj.equals("Комната успешно удалена!")) {
-            Toast.makeText(PlayActivity.this, "Ошибка: " + msg2.obj, Toast.LENGTH_SHORT).show();
+        if (msg2.arg1 == -1 || !msg2.obj.equals(getString(R.string.roomDeleted))) {
+            Toast.makeText(PlayActivity.this, getString(R.string.error) + msg2.obj, Toast.LENGTH_SHORT).show();
             return true;
         }
         switch (msg2.what) {

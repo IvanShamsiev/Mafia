@@ -60,28 +60,28 @@
             android:id="@+id/btnCreate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Создать игру" />
+            android:text="@string/createRoom" />
 
         <Button
             android:id="@+id/btnConnect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Подключиться к игре" />
+            android:text="@string/connectRoom" />
 
         <Button
             android:id="@+id/btnSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Настройки" />
+            android:text="@string/settings" />
 
         <Button
             android:id="@+id/btnAbout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Об игре" />
+            android:text="@string/about" />
     </LinearLayout>
 
 </LinearLayout>
