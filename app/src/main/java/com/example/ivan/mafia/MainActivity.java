@@ -32,9 +32,6 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "myTag";
-    public static final int myToken = 421928;
-
     Handler checkHandler, playHandler;
     SharedPreferences sPrefs;
     Mafia mafia = Mafia.getInstance();
@@ -227,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == 0) {
             if (resultCode == 1) {
+                assert data != null;
                 savedName = data.getStringExtra("name");
                 start();
             }
@@ -273,9 +271,9 @@ public class MainActivity extends AppCompatActivity {
             TextView textRoomMaker = view.findViewById(R.id.textRoomMaker);
             TextView textRoomType = view.findViewById(R.id.textRoomType);
             textRoomName.setText(roomName);
-            textRoomStatus.setText("Состояние: " + roomStatus);
-            textRoomMaker.setText("Создатель комнаты: " + roomMaker);
-            textRoomType.setText("Тип комнаты: " + roomType);
+            textRoomStatus.setText(String.format("Состояние: %s", roomStatus));
+            textRoomMaker.setText(String.format("Создатель комнаты: %s", roomMaker));
+            textRoomType.setText(String.format("Тип комнаты: %s", roomType));
 
             if (position == roomsData.size()-1) {
                 view.findViewById(R.id.imgLine).setVisibility(View.GONE);

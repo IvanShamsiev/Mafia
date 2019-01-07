@@ -4,23 +4,18 @@ import android.os.Handler;
 
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
-
-import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 
-public class Mafia {
+class Mafia {
 
     private static Mafia mafia;
 
@@ -28,60 +23,14 @@ public class Mafia {
         if (mafia == null) mafia = new Mafia();
         return mafia;
     }
-
-
-    /*private Retrofit retrofitJSON = new Retrofit.Builder()
-            .baseUrl("https://themafia2281488.000webhostapp.com/") // Базовый адрес
-            .addConverterFactory(GsonConverterFactory.create()) // Для преобразования JSON в List
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .build();
-
-    Observable<List<RoomInfo>> playObservable = Observable
-            .interval(0, 1000, TimeUnit.MILLISECONDS)
-            .flatMap((Function<Long, ObservableSource<?>>) aLong -> mafiaJSONAPI.getPlayMessage(1234))
-            .map(o -> (List<RoomInfo>) o)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread());
-
-    private MafiaAPI mafiaJSONAPI = retrofitJSON.create(MafiaAPI.class);
-
-    Observer<List<RoomInfo>> playObserver = new Observer<List<RoomInfo>>() {
-        @Override
-        public void onSubscribe(Disposable d) {
-            log("onSubscribe");
-        }
-
-        @Override
-        public void onNext(List<RoomInfo> messageList) {
-            log("onNext: " + messageList.size());
-            messageList.forEach(message -> {
-                log("PlayersCount: " + message.getPlayersCount());
-                log("MyName: " + message.getMyName());
-                log("MyRole: " + message.getMyRole());
-                log("NumbersOfDay: " + message.getNumberOfDay());
-            });
-        }
-
-        @Override
-        public void onError(Throwable e) {
-            log("onError: " + e.getMessage());
-        }
-
-        @Override
-        public void onComplete() {
-            log("onComplete");
-        }
-    };*/
-
-    
     
     void configInterceptor() {
         // Настраиваем слежение за запросами
-        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-        interceptor.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(interceptor)
-                .build();
+//        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+//        interceptor.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
+//        OkHttpClient client = new OkHttpClient.Builder()
+//                .addInterceptor(interceptor)
+//                .build();
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://themafia2281488.000webhostapp.com/") // Базовый адрес
                 .addConverterFactory(ScalarsConverterFactory.create()) // Для преобразования в строку
@@ -200,9 +149,7 @@ public class Mafia {
         }
 
         @Override
-        public void onSubscribe(Disposable d) {
-
-        }
+        public void onSubscribe(Disposable d) { }
 
         @Override
         public void onNext(Object o) {
@@ -218,6 +165,47 @@ public class Mafia {
         public void onComplete() {
             handler.sendMessage(handler.obtainMessage(n, 1, 0, response));
         } // arg1 = 1 => Всё хорошо
+    }
+
+    private interface MafiaAPI {
+        @GET("checkAccount.php") // 1
+        Observable<String> checkAccount(@Query("name") String name, @Query("password") String password);
+
+        @GET("checkRooms.php") // 2
+        Observable<String> checkRooms();
+
+        @GET("createRoom.php") // 3
+        Observable<String> createRoom(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("deleteRoom.php") // 4
+        Observable<String> deleteRoom(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("gameOver.php") // 5
+        Observable<String> gameOver(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("gameStart.php") // 6
+        Observable<String> gameStart(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword,
+                                     @Query("playersCount") int playersCount, @Query("mafiaCount") int mafiaCount, @Query("doctorCount") int doctorCount,
+                                     @Query("sheriffCount") int sheriffCount, @Query("civilianCount") int civilianCount);
+
+        @GET("joinRoom.php") // 7
+        Observable<String> joinRoom(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("nextPhase.php") // 8
+        Observable<String> nextPhase(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("playCheck.php") // 9
+        Observable<String> playCheck(@Query("playerName") String playerName, @Query("roomName") String roomName, @Query("roomPassword") String roomPassword);
+
+        @GET("register.php") // 10
+        Observable<String> register(@Query("name") String name, @Query("password") String password);
+
+        @GET("signIn.php") // 11
+        Observable<String> signIn(@Query("name") String name, @Query("password") String password);
+
+        @GET("vote.php") // 12
+        Observable<String> vote(@Query("playerName") String playerName, @Query("roomName") String roomName,
+                                @Query("roomPassword") String roomPassword, @Query("vote") String vote);
     }
 
 }
