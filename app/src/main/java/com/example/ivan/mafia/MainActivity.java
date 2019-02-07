@@ -228,8 +228,7 @@ public class MainActivity extends AppCompatActivity {
                 savedName = data.getStringExtra("name");
                 start();
             }
-            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) finishAffinity();
-            else ActivityCompat.finishAffinity(this);
+            else finishAffinity();
         }
     }
 
